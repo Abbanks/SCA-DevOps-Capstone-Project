@@ -117,6 +117,7 @@ Document solutions for:
 - https://github.com/munshakakusi
 - https://github.com/Woyengidinipre
 - https://github.com/Abbanks
+- https://github.com/Torisbrain
 
 
 ---
