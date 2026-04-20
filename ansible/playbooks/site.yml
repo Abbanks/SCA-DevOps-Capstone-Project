@@ -13,11 +13,3 @@
     - name: Confirm Python is ready
       ansible.builtin.debug:
         msg: "Python installed, continuing configuration"
-
-  # - name: Configure Web Tier
-  # hosts: webserver
-  # become: true
-  # roles:
-  #   - web
-
-# (Add app and db tiers here later)
