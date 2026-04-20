@@ -40,6 +40,14 @@ terraform.rc
 # Ansible
 # ----------------------
 *.retry
+ansible-env/
+venv/
+env/
+.env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
 
 # ----------------------
 # Node / App

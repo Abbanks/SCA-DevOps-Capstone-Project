@@ -110,6 +110,44 @@ Document solutions for:
 
 ---
 
+## Installation Instructions
+System prerequisites
+- Docker running
+- Terraform installed
+- Python and pip installed (sudo apt install -y python3 python3-venv python3-pip)
+
+Infrastructure setup (Terraform)
+```
+cd terraform
+terraform init
+terraform plan
+terraform apply
+
+# Check running containers
+docker ps
+This will show you a list of all running containers. You should see web_node, app_node, and db_node in the list, along with the status "Up".
+```
+
+Python environment (required for Ansible)
+```
+# Create and activate virtual environment
+python3 -m venv ansible-env
+source ansible-env/bin/activate
+
+# Upgrade pip and install Ansible
+python -m pip install --upgrade pip
+pip install -r requirements.txt`
+```
+
+Configuration (Ansible)
+```
+# From project root with ansible-env activated
+ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/site.yml
+
+# Test connectivity
+ansible all -m ping
+```
+
 ## Project Contributors
 
 - https://github.com/Ddataguru
