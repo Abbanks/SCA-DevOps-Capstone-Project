@@ -1,12 +1,22 @@
 ---
-- name: Install pip
+- name: Install pip and dependencies
   ansible.builtin.apt:
-    name: python3-pip
+    name:
+      - python3-pip
+      - python3-venv
+      - curl
     state: present
+    update_cache: yes
 
-- name: Install Flask
+- name: Create virtual environment
+  ansible.builtin.command:
+    cmd: python3 -m venv /var/www/app/venv
+    creates: /var/www/app/venv
+
+- name: Install Flask in virtualenv
   ansible.builtin.pip:
-    name: flask
+    name: flask==3.0.0
+    virtualenv: /var/www/app/venv
     state: present
 
 - name: Deploy application file
@@ -17,7 +27,7 @@
 
 - name: Start Flask app in background
   ansible.builtin.shell:
-    cmd: nohup python3 /var/www/app/app.py &
+    cmd: nohup /var/www/app/venv/bin/python3 /var/www/app/app.py &
     executable: /bin/bash
   changed_when: false
 
