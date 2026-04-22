@@ -6,4 +6,3 @@
       nohup python3 /var/www/app/app.py &
     executable: /bin/bash
   changed_when: false
-

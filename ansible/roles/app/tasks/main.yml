@@ -25,5 +25,3 @@
   ansible.builtin.wait_for:
     port: 5000
     timeout: 10
-
-
