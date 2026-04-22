@@ -6,7 +6,7 @@
       - python3-venv
       - curl
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Create virtual environment
   ansible.builtin.command:
