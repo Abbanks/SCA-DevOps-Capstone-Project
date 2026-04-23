@@ -1,66 +1,33 @@
 - name: Fix apt sources to use HTTPS
-  copy:
+  ansible.builtin.copy:
     dest: /etc/apt/sources.list
     content: |
       deb https://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse
       deb https://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse
       deb https://archive.ubuntu.com/ubuntu jammy-backports main restricted universe multiverse
       deb https://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse
+    mode: '0644'
 
 - name: Clean apt cache
-  command: apt-get clean
+  ansible.builtin.apt:
+    clean: true
 
 - name: Update apt cache with retries
-  apt:
-    update_cache: yes
-  register: apt_update
+  ansible.builtin.apt:
+    update_cache: true
+  register: common_apt_update
   retries: 5
   delay: 10
-  until: apt_update is succeeded
+  until: common_apt_update is succeeded
 
 - name: Ensure Python is installed
   ansible.builtin.raw: test -e /usr/bin/python3 || (apt update && apt install -y python3)
   changed_when: false
 
 - name: Install base packages
-  apt:
+  ansible.builtin.apt:
     name:
       - python3
       - python3-apt
       - curl
-      - ca-certificates
-      - gnupg
-      - cron
-      - rsyslog
     state: present
-  register: apt_install
-  retries: 5
-  delay: 10
-  until: apt_install is succeeded
-
-- name: Create application user
-  ansible.builtin.user:
-    name: appuser
-    shell: /bin/bash
-    create_home: true
-    state: present
-
-- name: Set up cron job for log rotation
-  ansible.builtin.cron:
-    name: "rotate logs daily"
-    minute: "0"
-    hour: "0"
-    job: "/usr/sbin/logrotate /etc/logrotate.conf"
-
-- name: Ensure application directory exists
-  ansible.builtin.file:
-    path: /var/www/app
-    state: directory
-    owner: appuser
-    group: appuser
-    mode: "0755"
-
-- name: Ensure cron service is started
-  ansible.builtin.service:
-    name: cron
-    state: started
