@@ -1,9 +1,29 @@
+- name: Fix apt sources to use HTTPS
+  copy:
+    dest: /etc/apt/sources.list
+    content: |
+      deb https://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse
+      deb https://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse
+      deb https://archive.ubuntu.com/ubuntu jammy-backports main restricted universe multiverse
+      deb https://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse
+
+- name: Clean apt cache
+  command: apt-get clean
+
+- name: Update apt cache with retries
+  apt:
+    update_cache: yes
+  register: apt_update
+  retries: 5
+  delay: 10
+  until: apt_update is succeeded
+
 - name: Ensure Python is installed
   ansible.builtin.raw: test -e /usr/bin/python3 || (apt update && apt install -y python3)
   changed_when: false
 
 - name: Install base packages
-  ansible.builtin.apt:
+  apt:
     name:
       - python3
       - python3-apt
@@ -13,8 +33,10 @@
       - cron
       - rsyslog
     state: present
-    update_cache: true
-    cache_valid_time: 3600
+  register: apt_install
+  retries: 5
+  delay: 10
+  until: apt_install is succeeded
 
 - name: Create application user
   ansible.builtin.user:
