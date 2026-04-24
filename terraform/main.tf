@@ -5,19 +5,6 @@ resource "docker_network" "app_network" {
   internal = true
 }
 
-resource "docker_container" "nodes" {
-  for_each = toset(var.containers)
-
-  name  = each.value
-  image = "python:3.12-slim"
-
-  command = ["sleep", "infinity"]
-
-  networks_advanced {
-    name = docker_network.app_network.name
-  }
-}
-
 resource "docker_container" "web" {
   name    = "web_node"
   image   = "ubuntu:22.04"
