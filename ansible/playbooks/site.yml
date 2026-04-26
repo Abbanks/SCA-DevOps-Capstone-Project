@@ -1,3 +1,4 @@
+---
 - name: Base infrastructure setup
   hosts: all
   become: true
@@ -10,9 +11,9 @@
   become: true
   gather_facts: true
 
-- name: Configure web server (nginx)
-  hosts: web
+- name: Configure app node
+  hosts: app
   become: true
   gather_facts: true
   roles:
-    - web
+    - app
