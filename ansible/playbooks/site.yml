@@ -14,9 +14,18 @@
       ansible.builtin.debug:
         msg: "Python installed, continuing configuration"
 
+<<<<<<< HEAD
 - name: Configure app node
   hosts: app_node
   become: true
   gather_facts: true
   roles:
     - app
+=======
+- name: Configure web server (nginx)
+  hosts: web
+  become: true
+  gather_facts: true
+  roles:
+    - web
+>>>>>>> c4027318d464ce9bcab040f44540aa536e76f956
