@@ -78,7 +78,7 @@
       nohup /usr/local/bin/prometheus \
         --config.file=/etc/prometheus/prometheus.yml \
         --storage.tsdb.path=/var/lib/prometheus \
-        --web.listen-address=:{{ prometheus_port }} \
+        --web.listen-address=:{{ monitoring_prometheus_port }} \
         --storage.tsdb.retention.time=7d \
         > /var/log/prometheus.log 2>&1 &
       echo $! > /tmp/prometheus.pid
@@ -171,7 +171,7 @@
     executable: /bin/bash
   changed_when: false
 
-- name: Verify Grafana is listening on port {{ grafana_port }}
+- name: Verify Grafana is listening on port {{ monitoring_grafana_port }}
   ansible.builtin.wait_for:
-    port: "{{ grafana_port }}"
+    port: "{{ monitoring_grafana_port }}"
     timeout: 30
