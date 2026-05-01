@@ -55,7 +55,7 @@
     lock_timeout: 180
   register: common_apt_update
   retries: 5
-  delay: 10
+  delay: 30
   until: common_apt_update is succeeded
 
 - name: Create application user
