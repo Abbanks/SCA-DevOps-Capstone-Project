@@ -27,7 +27,8 @@
 
 - name: Download prometheus archive
   ansible.builtin.get_url:
-    url: "https://github.com/prometheus/prometheus/releases/download/v{{  monitoring_prometheus_version }}/prometheus-{{  monitoring_prometheus_version }}.linux-amd64.tar.gz"
+    url: >
+      https://github.com/prometheus/prometheus/releases/download/v{{ monitoring_prometheus_version }}/prometheus-{{ monitoring_prometheus_version }}.linux-amd64.tar.gz
     dest: /tmp/prometheus.tar.gz
     mode: '0644'
   when: not monitoring_prometheus_binary.stat.exists
@@ -67,19 +68,6 @@
   changed_when: false
   failed_when: false
 
-# - name: Start prometheus in background
-#   ansible.builtin.shell:
-#     cmd: >
-#       nohup /usr/local/bin/prometheus
-#       --config.file=/etc/prometheus/prometheus.yml
-#       --storage.tsdb.path=/var/lib/prometheus
-#       --web.listen-address=:{{ monitoring_prometheus_port }}
-#       --storage.tsdb.retention.time=7d
-#       > /var/log/prometheus.log 2>&1 &
-#       echo $! > /tmp/prometheus.pid
-#     executable: /bin/bash
-#   changed_when: false
-
 - name: Start prometheus in background
   ansible.builtin.shell: >
     nohup /usr/local/bin/prometheus
@@ -100,6 +88,11 @@
 
 # ── Grafana ───────────────────────────────────────────────────────────────────
 
+- name: Check if Grafana is already installed
+  ansible.builtin.stat:
+    path: /usr/sbin/grafana-server
+  register: grafana_binary
+
 - name: Install Grafana dependencies
   ansible.builtin.apt:
     name:
@@ -109,32 +102,72 @@
       - gnupg
     state: present
     update_cache: true
+  when: not grafana_binary.stat.exists
+
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  when: not grafana_binary.stat.exists
 
 - name: Add Grafana APT key
   ansible.builtin.get_url:
     url: https://packages.grafana.com/gpg.key
-    dest: /tmp/grafana.key
+    dest: /etc/apt/keyrings/grafana.asc
     mode: '0644'
-
-- name: Import GPG key
-  ansible.builtin.apt_key:
-    file: /tmp/grafana.key
-    state: present
+  when: not grafana_binary.stat.exists
 
 - name: Add Grafana APT repository
   ansible.builtin.apt_repository:
-    repo: "deb https://apt.grafana.com stable main"
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main"
     state: present
     filename: grafana
+  when: not grafana_binary.stat.exists
 
 - name: Install Grafana
   ansible.builtin.apt:
     name: grafana
     state: present
     update_cache: true
+  when: not grafana_binary.stat.exists
+
+- name: Configure Grafana to listen on all interfaces
+  ansible.builtin.ini_file:
+    path: /etc/grafana/grafana.ini
+    section: server
+    option: http_addr
+    value: "0.0.0.0"
+    mode: '0640'
 
 - name: Deploy Grafana datasource
   ansible.builtin.template:
-    src: datasource.yml.j2
+    src: grafana_datasource.yml.j2
     dest: /etc/grafana/provisioning/datasources/prometheus.yml
-    mode: '0644'
+    owner: root
+    group: grafana
+    mode: '0640'
+
+- name: Stop any existing Grafana process
+  ansible.builtin.shell:
+    cmd: kill $(cat /tmp/grafana.pid) 2>/dev/null; rm -f /tmp/grafana.pid; true
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+
+- name: Start Grafana in background
+  ansible.builtin.shell:
+    cmd: >
+      nohup /usr/sbin/grafana-server
+      --homepath=/usr/share/grafana
+      --config=/etc/grafana/grafana.ini
+      cfg:server.http_addr=0.0.0.0
+      > /var/log/grafana.log 2>&1 &
+      echo $! > /tmp/grafana.pid
+    executable: /bin/bash
+  changed_when: false
+
+- name: Verify Grafana is listening on port {{ grafana_port }}
+  ansible.builtin.wait_for:
+    port: "{{ grafana_port }}"
+    timeout: 30

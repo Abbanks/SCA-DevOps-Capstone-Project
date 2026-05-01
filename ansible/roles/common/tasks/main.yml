@@ -19,6 +19,7 @@
       - cron
     state: present
     update_cache: true
+    lock_timeout: 180
 
 - name: Configure permanent HTTPS production sources
   ansible.builtin.copy:

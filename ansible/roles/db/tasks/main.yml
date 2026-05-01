@@ -8,12 +8,6 @@
     state: present
     update_cache: true
 
-# - name: Start PostgreSQL directly
-#   ansible.builtin.shell:
-#     cmd: service postgresql start
-#     executable: /bin/bash
-#   changed_when: false
-#   failed_when: false
 - name: Start PostgreSQL
   ansible.builtin.service:
     name: postgresql
@@ -68,12 +62,6 @@
     path: /etc/postgresql/14/main/pg_hba.conf
     line: "host {{ db_name }} {{ db_user }} 172.18.0.0/16 md5"
     state: present
-
-# - name: Restart PostgreSQL to apply config changes
-#   ansible.builtin.shell:
-#     cmd: service postgresql restart
-#     executable: /bin/bash
-#   changed_when: false
 
 - name: Restart PostgreSQL
   ansible.builtin.service:
