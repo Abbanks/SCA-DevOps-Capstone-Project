@@ -25,10 +25,14 @@
     path: /usr/local/bin/prometheus
   register: monitoring_prometheus_binary
 
+- name: Set prometheus download URL
+  ansible.builtin.set_fact:
+    monitoring_prometheus_url: "https://github.com/prometheus/prometheus/releases/download/\
+      v{{ monitoring_prometheus_version }}/prometheus-{{ monitoring_prometheus_version }}.linux-amd64.tar.gz"
+
 - name: Download prometheus archive
   ansible.builtin.get_url:
-    url: >
-      https://github.com/prometheus/prometheus/releases/download/v{{ monitoring_prometheus_version }}/prometheus-{{ monitoring_prometheus_version }}.linux-amd64.tar.gz
+    url: "{{ monitoring_prometheus_url }}"
     dest: /tmp/prometheus.tar.gz
     mode: '0644'
   when: not monitoring_prometheus_binary.stat.exists
