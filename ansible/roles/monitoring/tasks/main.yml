@@ -73,16 +73,16 @@
       nohup /usr/local/bin/prometheus
       --config.file=/etc/prometheus/prometheus.yml
       --storage.tsdb.path=/var/lib/prometheus
-      --web.listen-address=:{{ prometheus_port }}
+      --web.listen-address=:{{ monitoring_prometheus_port }}
       --storage.tsdb.retention.time=7d
       > /var/log/prometheus.log 2>&1 &
       echo $! > /tmp/prometheus.pid
     executable: /bin/bash
   changed_when: false
 
-- name: Verify prometheus is listening on port {{ prometheus_port }}
+- name: Verify prometheus is listening on port {{ monitoring_prometheus_port }}
   ansible.builtin.wait_for:
-    port: "{{ prometheus_port }}"
+    port: "{{ monitoring_prometheus_port }}"
     timeout: 20
 
 # ── Grafana ───────────────────────────────────────────────────────────────────
@@ -98,14 +98,15 @@
     update_cache: true
 
 - name: Add Grafana APT key
-  ansible.builtin.shell:
-    cmd: |
-      wget -q -O - https://apt.grafana.com/gpg.key | \
-      gpg --dearmor | \
-      tee /etc/apt/trusted.gpg.d/grafana.gpg > /dev/null
-  args:
-    creates: /etc/apt/trusted.gpg.d/grafana.gpg
-  changed_when: false
+  ansible.builtin.get_url:
+    url: https://packages.grafana.com/gpg.key
+    dest: /tmp/grafana.key
+    mode: '0644'
+
+- name: Import GPG key
+  ansible.builtin.apt_key:
+    file: /tmp/grafana.key
+    state: present
 
 - name: Add Grafana APT repository
   ansible.builtin.apt_repository:
@@ -119,7 +120,8 @@
     state: present
     update_cache: true
 
-- name: Deploy Grafana datasource provisioning (Prometheus)
+- name: Deploy Grafana datasource
   ansible.builtin.template:
-    src: grafana_datasource.yml.j2
+    src: datasource.yml.j2
     dest: /etc/grafana/provisioning/datasources/prometheus.yml
+    mode: '0644'  

@@ -80,7 +80,7 @@ resource "docker_container" "monitoring" {
   restart = var.restart_policy
 
   ports {
-    internal = var.prometheus_port
+    internal = var.monitoring_prometheus_port
     external = var.prometheus_host_port
   }
 
@@ -94,7 +94,7 @@ resource "docker_container" "monitoring" {
   }
 
   healthcheck {
-    test         = ["CMD-SHELL", "curl -f http://localhost:${var.prometheus_port}/-/healthy || exit 1"]
+    test         = ["CMD-SHELL", "curl -f http://localhost:${var.monitoring_prometheus_port}/-/healthy || exit 1"]
     interval     = "30s"
     timeout      = "5s"
     retries      = 3

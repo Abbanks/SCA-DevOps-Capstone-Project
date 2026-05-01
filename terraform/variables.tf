@@ -76,7 +76,7 @@ variable "db_container_port" {
   default     = 5432
 }
 
-variable "prometheus_port" {
+variable "monitoring_prometheus_port" {
   description = "Prometheus internal container port"
   type        = number
   default     = 9090

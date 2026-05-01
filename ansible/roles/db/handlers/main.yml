@@ -1,6 +1,11 @@
 ---
-- name: Restart postgresql
-  ansible.builtin.shell:
-    cmd: service postgresql restart
-    executable: /bin/bash
-  changed_when: false
+# - name: Restart postgresql
+#   ansible.builtin.shell:
+#     cmd: service postgresql restart
+#     executable: /bin/bash
+#   changed_when: false
+
+- name: Restart PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: restarted

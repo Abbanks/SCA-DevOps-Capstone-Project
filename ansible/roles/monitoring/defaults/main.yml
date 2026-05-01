@@ -1,6 +1,6 @@
 ---
 prometheus_version: "2.53.2"
-prometheus_port: 9090
+monitoring_prometheus_port: 9090
 grafana_port: 3000
 
 # Scrape targets — override in group_vars/host_vars as needed
