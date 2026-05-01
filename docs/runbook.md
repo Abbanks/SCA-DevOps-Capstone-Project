@@ -1,9 +1,3 @@
-# RUNBOOK.md
-
-> Closes #16
-> Maintainer: [@Woyengidinipre](https://github.com/Woyengidinipre)
-> Label: `documentation`
-
 This runbook documents diagnosis steps, recovery commands, and verification checks for common failures in the SCA DevOps Capstone Project.
 
 ---
@@ -34,7 +28,7 @@ This project provisions three Docker containers using Terraform and configures t
 | `app_node` | Application server |
 | `db_node` | Database server (PostgreSQL) |
 
-**Monitoring:** Prometheus + Grafana via `node_exporter` on all nodes.  
+**Monitoring:** Prometheus + Grafana via `node_exporter` on all nodes.
 **CI/CD:** GitHub Actions runs `ansible-lint` and `terraform validate` on every push.
 
 ---
@@ -164,7 +158,7 @@ docker exec web_node nginx -t
 docker exec web_node systemctl restart nginx
 
 # If config is broken, re-apply the web role
-ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/site.yml --limit web_node --tags web
+ansible-playbook playbooks/site.yml --limit web_node --tags web
 
 # If the service won't start due to a port conflict
 docker exec web_node ss -tlnp | grep :80
@@ -210,7 +204,7 @@ docker exec app_node ps aux | grep <app-process>
 docker exec app_node systemctl restart <app-service-name>
 
 # Re-deploy the application via Ansible
-ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/site.yml --limit app_node --tags app
+ansible-playbook playbooks/site.yml --limit app_node --tags app
 ```
 
 ### Verification
@@ -254,7 +248,7 @@ docker exec db_node cat /var/log/postgresql/postgresql-*.log | tail -50
 docker exec db_node systemctl restart postgresql
 
 # If credentials or config are wrong, re-run the db role
-ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/site.yml --limit db_node --tags db
+ansible-playbook playbooks/site.yml --limit db_node --tags db
 ```
 
 ### Verification
@@ -304,7 +298,7 @@ docker exec web_node systemctl restart node_exporter
 docker exec <monitoring_node> systemctl restart grafana-server
 
 # Re-apply the common role to restore monitoring agents
-ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/site.yml --tags common
+ansible-playbook playbooks/site.yml --tags common
 ```
 
 ### Verification
@@ -387,7 +381,7 @@ Push the fix and confirm the workflow run goes green in the Actions tab.
 
 ```bash
 # Run drift detection script
-bash scripts/drift_detection.sh
+bash scripts/drift-check.sh
 ```
 
 The script checks:
@@ -399,16 +393,16 @@ The script checks:
 
 ```bash
 # Re-apply Ansible to the affected node
-ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/site.yml --limit <node_name>
+ansible-playbook playbooks/site.yml --limit <node_name>
 
 # Or re-apply everything (safe — Ansible is idempotent)
-ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/site.yml
+ansible-playbook playbooks/site.yml
 ```
 
 ### Verification
 
 ```bash
-bash scripts/drift_detection.sh
+bash scripts/drift-check.sh
 # Expected: all checks return PASS / OK
 ```
 
@@ -426,7 +420,7 @@ git log --oneline ansible/
 git checkout <good-commit-hash> -- ansible/
 
 # Re-run the playbook
-ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/site.yml
+ansible-playbook playbooks/site.yml
 ```
 
 ### Roll back infrastructure (Terraform)
@@ -460,10 +454,12 @@ git checkout main && git pull origin main
 cd terraform && terraform apply && cd ..
 
 # Step 4: Re-configure
-ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/site.yml
+source ansible-env/bin/activate
+cd ansible
+ansible-playbook playbooks/site.yml
 
 # Step 5: Verify
-bash scripts/drift_detection.sh
+bash scripts/drift-check.sh
 ```
 
 ---

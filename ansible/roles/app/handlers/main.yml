@@ -2,7 +2,12 @@
 - name: Restart app
   ansible.builtin.shell:
     cmd: |
-      pkill -f app.py || true
-      nohup python3 /var/www/app/app.py &
+      kill $(cat /tmp/app.pid) 2>/dev/null; rm -f /tmp/app.pid
+      sleep 1
+      set -a
+      source /var/www/app/.env
+      set +a
+      nohup /var/www/app/venv/bin/python3 /var/www/app/app.py > /var/log/app.log 2>&1 &
+      echo $! > /tmp/app.pid
     executable: /bin/bash
   changed_when: false

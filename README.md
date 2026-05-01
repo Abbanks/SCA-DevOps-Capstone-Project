@@ -147,18 +147,49 @@ ansible-playbook playbooks/site.yml
 
 # Test connectivity
 ansible all -m ping
+
+# Verify with drift check
+bash scripts/drift-check.sh
+
+# 5. Open monitoring
+Prometheus: http://localhost:9090/targets  (check Status → Targets, all should be UP)
+Grafana:    http://localhost:3000/login  (login: admin / admin, Node Overview dashboard is pre-loaded)
 ```
+
+# Core Infrastructure Screenshots
+All containers running
+
+![Docker Containers](screenshots/docker_ps.png)
+![Docker Containers](screenshots/docker-containers.png)
+
+Web node working
+
+![Web Node](screenshots/web_node.png)
+![Web Node](screenshots/web_node_status.png)
+
+Monitoring
+
+![Prometheus Targets](screenshots/prometheus_targets.png)
+![Grafana Dashboard](screenshots/grafana_dashboard.png)
+![Prometheus Metrics](screenshots/prometheus_metrics.png)
+
+Ansible
+
+![Ansible Playbook](screenshots/ansible_ping_all_nodes.png)
+
+Drift Check
+
+![Drift Check](screenshots/drift-check.png)
 
 ## Project Contributors
 
-- https://github.com/Ddataguru
-- https://github.com/KingKabari
-- https://github.com/munshakakusi
-- https://github.com/Woyengidinipre
-- https://github.com/Abbanks
-- https://github.com/Torisbrain
-
-
+- Uchechukwu Queen Onuegbu https://github.com/Ddataguru
+- Kabari Dumk William https://github.com/KingKabari
+- Munshak Akusi https://github.com/munshakakusi
+- Woyengidinipre Ikpaikpai https://github.com/Woyengidinipre
+- Abigail Eboda https://github.com/Abbanks
+- Deborah Dogo https://github.com/DeborahDogo
+- https://github.com/FavieCodes
 ---
 
 ## Goal

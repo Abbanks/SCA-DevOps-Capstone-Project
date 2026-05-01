@@ -5,9 +5,10 @@ resource "docker_network" "app_network" {
 }
 
 locals {
-  image_web = length(trimspace(var.image_web)) > 0 ? var.image_web : var.image
-  image_app = length(trimspace(var.image_app)) > 0 ? var.image_app : var.image
-  image_db  = length(trimspace(var.image_db)) > 0 ? var.image_db : var.image
+  image_web        = length(trimspace(var.image_web)) > 0 ? var.image_web : var.image
+  image_app        = length(trimspace(var.image_app)) > 0 ? var.image_app : var.image
+  image_db         = length(trimspace(var.image_db)) > 0 ? var.image_db : var.image
+  image_monitoring = length(trimspace(var.image_monitoring)) > 0 ? var.image_monitoring : var.image
 }
 
 resource "docker_container" "web" {
@@ -65,6 +66,35 @@ resource "docker_container" "db" {
 
   healthcheck {
     test         = ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
+    interval     = "30s"
+    timeout      = "5s"
+    retries      = 3
+    start_period = var.healthcheck_start_period
+  }
+}
+
+resource "docker_container" "monitoring" {
+  name    = "monitoring_node"
+  image   = local.image_monitoring
+  command = ["sleep", "infinity"]
+  restart = var.restart_policy
+
+  ports {
+    internal = var.monitoring_prometheus_port
+    external = var.prometheus_host_port
+  }
+
+  ports {
+    internal = var.monitoring_grafana_port
+    external = var.grafana_host_port
+  }
+
+  networks_advanced {
+    name = docker_network.app_network.name
+  }
+
+  healthcheck {
+    test         = ["CMD-SHELL", "curl -f http://localhost:${var.monitoring_prometheus_port}/-/healthy || exit 1"]
     interval     = "30s"
     timeout      = "5s"
     retries      = 3

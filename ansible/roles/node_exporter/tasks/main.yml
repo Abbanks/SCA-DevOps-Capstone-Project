@@ -1,0 +1,56 @@
+---
+- name: Install required packages for node_exporter
+  ansible.builtin.apt:
+    name:
+      - wget
+      - tar
+    state: present
+    update_cache: true
+    lock_timeout: 180
+
+- name: Create node_exporter system user
+  ansible.builtin.user:
+    name: node_exporter
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+    state: present
+
+- name: Check if node_exporter binary already exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/node_exporter
+  register: node_exporter_binary
+
+- name: Download and extract node_exporter
+  ansible.builtin.unarchive:
+    src: >
+      https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
+    dest: /usr/local/bin
+    remote_src: true
+    extra_opts: ["--strip-components=1"]
+    owner: node_exporter
+    group: node_exporter
+    mode: '0755'
+    creates: /usr/local/bin/node_exporter
+
+- name: Stop any existing node_exporter process
+  ansible.builtin.shell:
+    cmd: kill $(cat /tmp/node_exporter.pid) 2>/dev/null; rm -f /tmp/node_exporter.pid; true
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+
+- name: Start node_exporter in background
+  ansible.builtin.shell:
+    cmd: >
+      nohup /usr/local/bin/node_exporter
+      --web.listen-address=:{{ node_exporter_port }}
+      > /var/log/node_exporter.log 2>&1 &
+      echo $! > /tmp/node_exporter.pid
+    executable: /bin/bash
+  changed_when: false
+
+- name: Verify node_exporter is listening on port {{ node_exporter_port }}
+  ansible.builtin.wait_for:
+    port: "{{ node_exporter_port }}"
+    timeout: 15

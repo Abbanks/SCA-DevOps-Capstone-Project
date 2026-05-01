@@ -9,15 +9,35 @@
       deb http://archive.ubuntu.com/ubuntu jammy main universe
     mode: '0644'
 
+- name: Remove apt lock files if present
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/lib/apt/lists/lock
+    - /var/cache/apt/archives/lock
+    - /var/lib/dpkg/lock
+    - /var/lib/dpkg/lock-frontend
+  failed_when: false
+
+- name: Fix interrupted dpkg if any
+  ansible.builtin.shell:
+    cmd: dpkg --configure -a
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+
 - name: Install CA certificates and base dependencies
   ansible.builtin.apt:
     name:
       - ca-certificates
       - python3-apt
       - curl
-      - gnupg
+      - sudo
+      - cron
     state: present
     update_cache: true
+    lock_timeout: 180
 
 - name: Configure permanent HTTPS production sources
   ansible.builtin.copy:
@@ -32,9 +52,10 @@
 - name: Final update of apt cache with retries
   ansible.builtin.apt:
     update_cache: true
+    lock_timeout: 180
   register: common_apt_update
   retries: 5
-  delay: 10
+  delay: 30
   until: common_apt_update is succeeded
 
 - name: Create application user
@@ -42,4 +63,40 @@
     name: appuser
     shell: /bin/bash
     create_home: true
+    state: present
+
+- name: Create application log directory
+  ansible.builtin.file:
+    path: /var/log/app
+    state: directory
+    owner: appuser
+    group: appuser
+    mode: '0755'
+
+- name: Deploy logrotate config for application logs
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/app
+    content: |
+      /var/log/app/*.log {
+          daily
+          rotate 7
+          compress
+          delaycompress
+          missingok
+          notifempty
+          create 0640 appuser appuser
+          sharedscripts
+          postrotate
+              pkill -HUP -f app.py || true
+          endscript
+      }
+    mode: '0644'
+
+- name: Schedule daily log rotation via cron
+  ansible.builtin.cron:
+    name: "Rotate application logs"
+    user: root
+    hour: "2"
+    minute: "0"
+    job: "/usr/sbin/logrotate /etc/logrotate.d/app >> /var/log/logrotate.log 2>&1"
     state: present

@@ -8,11 +8,16 @@
     state: present
     update_cache: true
 
-- name: Ensure PostgreSQL is running
+- name: Start PostgreSQL
   ansible.builtin.service:
     name: postgresql
     state: started
     enabled: true
+
+- name: Wait for PostgreSQL to be ready
+  ansible.builtin.wait_for:
+    port: 5432
+    timeout: 30
 
 - name: Create database
   ansible.builtin.command:
@@ -51,16 +56,19 @@
     regexp: "^#?listen_addresses"
     line: "listen_addresses = '*'"
     state: present
-  notify: Restart postgresql
 
-- name: Allow app_node to connect
+- name: Allow app subnet to connect
   ansible.builtin.lineinfile:
     path: /etc/postgresql/14/main/pg_hba.conf
-    line: "host {{ db_name }} {{ db_user }} {{ db_app_node }} md5"
+    line: "host {{ db_name }} {{ db_user }} 172.18.0.0/16 md5"
     state: present
-  notify: Restart postgresql
 
-- name: Verify PostgreSQL is running on port 5432
+- name: Restart PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: restarted
+
+- name: Verify PostgreSQL is running on port {{ db_port }}
   ansible.builtin.wait_for:
     port: "{{ db_port }}"
-    timeout: 10
+    timeout: 15
