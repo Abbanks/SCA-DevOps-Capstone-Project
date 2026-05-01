@@ -7,7 +7,7 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:{{ monitoring_prometheus_port }}"]
 
-{% for target in prometheus_scrape_targets %}
+{% for target in monitoring_prometheus_scrape_targets %}
   - job_name: "{{ target.job_name }}"
     static_configs:
       - targets: ["{{ target.target }}"]

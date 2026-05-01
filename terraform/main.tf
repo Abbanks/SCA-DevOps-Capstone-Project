@@ -85,7 +85,7 @@ resource "docker_container" "monitoring" {
   }
 
   ports {
-    internal = var.grafana_port
+    internal = var.monitoring_grafana_port
     external = var.grafana_host_port
   }
 
