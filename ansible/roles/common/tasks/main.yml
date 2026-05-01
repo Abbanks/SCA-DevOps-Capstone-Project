@@ -9,6 +9,24 @@
       deb http://archive.ubuntu.com/ubuntu jammy main universe
     mode: '0644'
 
+- name: Remove apt lock files if present
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/lib/apt/lists/lock
+    - /var/cache/apt/archives/lock
+    - /var/lib/dpkg/lock
+    - /var/lib/dpkg/lock-frontend
+  failed_when: false
+
+- name: Fix interrupted dpkg if any
+  ansible.builtin.shell:
+    cmd: dpkg --configure -a
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+
 - name: Install CA certificates and base dependencies
   ansible.builtin.apt:
     name:
@@ -34,6 +52,7 @@
 - name: Final update of apt cache with retries
   ansible.builtin.apt:
     update_cache: true
+    lock_timeout: 180
   register: common_apt_update
   retries: 5
   delay: 10
