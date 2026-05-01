@@ -69,15 +69,15 @@
   failed_when: false
 
 - name: Start prometheus in background
-  ansible.builtin.shell: >
-    nohup /usr/local/bin/prometheus
-    --config.file=/etc/prometheus/prometheus.yml
-    --storage.tsdb.path=/var/lib/prometheus
-    --web.listen-address=:{{ monitoring_prometheus_port }}
-    --storage.tsdb.retention.time=7d
-    > /var/log/prometheus.log 2>&1 &
-    echo $! > /tmp/prometheus.pid
-  args:
+  ansible.builtin.shell:
+    cmd: |
+      nohup /usr/local/bin/prometheus \
+        --config.file=/etc/prometheus/prometheus.yml \
+        --storage.tsdb.path=/var/lib/prometheus \
+        --web.listen-address=:{{ prometheus_port }} \
+        --storage.tsdb.retention.time=7d \
+        > /var/log/prometheus.log 2>&1 &
+      echo $! > /tmp/prometheus.pid
     executable: /bin/bash
   changed_when: false
 
@@ -91,7 +91,7 @@
 - name: Check if Grafana is already installed
   ansible.builtin.stat:
     path: /usr/sbin/grafana-server
-  register: grafana_binary
+  register: monitoring_grafana_binary
 
 - name: Install Grafana dependencies
   ansible.builtin.apt:
@@ -102,38 +102,38 @@
       - gnupg
     state: present
     update_cache: true
-  when: not grafana_binary.stat.exists
+  when: not monitoring_grafana_binary.stat.exists
 
 - name: Create keyrings directory
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
-  when: not grafana_binary.stat.exists
+  when: not monitoring_grafana_binary.stat.exists
 
 - name: Add Grafana APT key
   ansible.builtin.get_url:
     url: https://packages.grafana.com/gpg.key
     dest: /etc/apt/keyrings/grafana.asc
     mode: '0644'
-  when: not grafana_binary.stat.exists
+  when: not monitoring_grafana_binary.stat.exists
 
 - name: Add Grafana APT repository
   ansible.builtin.apt_repository:
     repo: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main"
     state: present
     filename: grafana
-  when: not grafana_binary.stat.exists
+  when: not monitoring_grafana_binary.stat.exists
 
 - name: Install Grafana
   ansible.builtin.apt:
     name: grafana
     state: present
     update_cache: true
-  when: not grafana_binary.stat.exists
+  when: not monitoring_grafana_binary.stat.exists
 
 - name: Configure Grafana to listen on all interfaces
-  ansible.builtin.ini_file:
+  community.general.ini_file:
     path: /etc/grafana/grafana.ini
     section: server
     option: http_addr
