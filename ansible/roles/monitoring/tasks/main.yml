@@ -67,17 +67,29 @@
   changed_when: false
   failed_when: false
 
+# - name: Start prometheus in background
+#   ansible.builtin.shell:
+#     cmd: >
+#       nohup /usr/local/bin/prometheus
+#       --config.file=/etc/prometheus/prometheus.yml
+#       --storage.tsdb.path=/var/lib/prometheus
+#       --web.listen-address=:{{ monitoring_prometheus_port }}
+#       --storage.tsdb.retention.time=7d
+#       > /var/log/prometheus.log 2>&1 &
+#       echo $! > /tmp/prometheus.pid
+#     executable: /bin/bash
+#   changed_when: false
+
 - name: Start prometheus in background
-  ansible.builtin.shell:
-    cmd: >
-      nohup /usr/local/bin/prometheus
-      --config.file=/etc/prometheus/prometheus.yml
-      --storage.tsdb.path=/var/lib/prometheus
-      --web.listen-address=:{{ monitoring_prometheus_port }}
-      --storage.tsdb.retention.time=7d
-      > /var/log/prometheus.log 2>&1 &
-      echo $! > /tmp/prometheus.pid
-    executable: /bin/bash
+  ansible.builtin.shell: >
+    nohup /usr/local/bin/prometheus
+    --config.file=/etc/prometheus/prometheus.yml
+    --storage.tsdb.path=/var/lib/prometheus
+    --web.listen-address=:{{ monitoring_prometheus_port }}
+    --storage.tsdb.retention.time=7d
+    > /var/log/prometheus.log 2>&1 &
+    echo $! > /tmp/prometheus.pid
+  executable: /bin/bash
   changed_when: false
 
 - name: Verify prometheus is listening on port {{ monitoring_prometheus_port }}

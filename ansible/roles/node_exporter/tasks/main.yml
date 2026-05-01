@@ -60,8 +60,7 @@
     owner: node_exporter
     group: node_exporter
     mode: '0755'
-    
-  creates: /usr/local/bin/node_exporter
+    creates: /usr/local/bin/node_exporter
 
 - name: Stop any existing node_exporter process
   ansible.builtin.shell:

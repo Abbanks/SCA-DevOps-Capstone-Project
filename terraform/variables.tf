@@ -88,7 +88,7 @@ variable "prometheus_host_port" {
   default     = 9090
 }
 
-variable " monitoring_grafana_port" {
+variable "monitoring_grafana_port" {
   description = "Grafana internal container port"
   type        = number
   default     = 3000
