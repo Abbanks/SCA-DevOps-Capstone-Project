@@ -22,6 +22,12 @@ variable "image_db" {
   default     = ""
 }
 
+variable "image_monitoring" {
+  description = "Monitoring node image"
+  type        = string
+  default     = ""
+}
+
 variable "network_name" {
   description = "Docker network name"
   type        = string
@@ -68,6 +74,30 @@ variable "db_container_port" {
   description = "Database container internal port"
   type        = number
   default     = 5432
+}
+
+variable "prometheus_port" {
+  description = "Prometheus internal container port"
+  type        = number
+  default     = 9090
+}
+
+variable "prometheus_host_port" {
+  description = "Host port mapped to Prometheus"
+  type        = number
+  default     = 9090
+}
+
+variable "grafana_port" {
+  description = "Grafana internal container port"
+  type        = number
+  default     = 3000
+}
+
+variable "grafana_host_port" {
+  description = "Host port mapped to Grafana"
+  type        = number
+  default     = 3000
 }
 
 variable "healthcheck_start_period" {

@@ -1,4 +1,6 @@
+---
 - name: Restart nginx
-  ansible.builtin.service:
-    name: nginx
-    state: restarted
+  ansible.builtin.shell:
+    cmd: nginx -s reload 2>/dev/null || nginx
+    executable: /bin/bash
+  changed_when: false

@@ -40,3 +40,18 @@
   gather_facts: true
   roles:
     - web
+
+- name: Install node_exporter on all nodes
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - node_exporter
+
+- name: Configure monitoring node
+  hosts: monitoring
+  become: true
+  gather_facts: true
+  roles:
+    - node_exporter
+    - monitoring

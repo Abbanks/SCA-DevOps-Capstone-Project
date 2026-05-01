@@ -15,7 +15,8 @@
       - ca-certificates
       - python3-apt
       - curl
-      - gnupg
+      - sudo
+      - cron
     state: present
     update_cache: true
 
@@ -42,4 +43,40 @@
     name: appuser
     shell: /bin/bash
     create_home: true
+    state: present
+
+- name: Create application log directory
+  ansible.builtin.file:
+    path: /var/log/app
+    state: directory
+    owner: appuser
+    group: appuser
+    mode: '0755'
+
+- name: Deploy logrotate config for application logs
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/app
+    content: |
+      /var/log/app/*.log {
+          daily
+          rotate 7
+          compress
+          delaycompress
+          missingok
+          notifempty
+          create 0640 appuser appuser
+          sharedscripts
+          postrotate
+              pkill -HUP -f app.py || true
+          endscript
+      }
+    mode: '0644'
+
+- name: Schedule daily log rotation via cron
+  ansible.builtin.cron:
+    name: "Rotate application logs"
+    user: root
+    hour: "2"
+    minute: "0"
+    job: "/usr/sbin/logrotate /etc/logrotate.d/app >> /var/log/logrotate.log 2>&1"
     state: present

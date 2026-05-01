@@ -1,0 +1,125 @@
+---
+# ── Prometheus ────────────────────────────────────────────────────────────────
+
+- name: Create prometheus system user
+  ansible.builtin.user:
+    name: prometheus
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+    state: present
+
+- name: Create prometheus directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+  loop:
+    - /etc/prometheus
+    - /var/lib/prometheus
+
+- name: Check if prometheus binary already exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/prometheus
+  register: prometheus_binary
+
+- name: Download prometheus archive
+  ansible.builtin.get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp/prometheus.tar.gz
+    mode: '0644'
+  when: not prometheus_binary.stat.exists
+
+- name: Extract prometheus archive
+  ansible.builtin.unarchive:
+    src: /tmp/prometheus.tar.gz
+    dest: /tmp/
+    remote_src: true
+  when: not prometheus_binary.stat.exists
+
+- name: Install prometheus binaries
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+    remote_src: true
+  loop:
+    - prometheus
+    - promtool
+  when: not prometheus_binary.stat.exists
+
+- name: Deploy prometheus configuration
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+
+- name: Stop any existing prometheus process
+  ansible.builtin.shell:
+    cmd: kill $(cat /tmp/prometheus.pid) 2>/dev/null; rm -f /tmp/prometheus.pid; true
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+
+- name: Start prometheus in background
+  ansible.builtin.shell:
+    cmd: >
+      nohup /usr/local/bin/prometheus
+      --config.file=/etc/prometheus/prometheus.yml
+      --storage.tsdb.path=/var/lib/prometheus
+      --web.listen-address=:{{ prometheus_port }}
+      --storage.tsdb.retention.time=7d
+      > /var/log/prometheus.log 2>&1 &
+      echo $! > /tmp/prometheus.pid
+    executable: /bin/bash
+  changed_when: false
+
+- name: Verify prometheus is listening on port {{ prometheus_port }}
+  ansible.builtin.wait_for:
+    port: "{{ prometheus_port }}"
+    timeout: 20
+
+# ── Grafana ───────────────────────────────────────────────────────────────────
+
+- name: Install Grafana dependencies
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - software-properties-common
+      - wget
+      - gnupg
+    state: present
+    update_cache: true
+
+- name: Add Grafana APT key
+  ansible.builtin.shell:
+    cmd: |
+      wget -q -O - https://apt.grafana.com/gpg.key | \
+      gpg --dearmor | \
+      tee /etc/apt/trusted.gpg.d/grafana.gpg > /dev/null
+  args:
+    creates: /etc/apt/trusted.gpg.d/grafana.gpg
+  changed_when: false
+
+- name: Add Grafana APT repository
+  ansible.builtin.apt_repository:
+    repo: "deb https://apt.grafana.com stable main"
+    state: present
+    filename: grafana
+
+- name: Install Grafana
+  ansible.builtin.apt:
+    name: grafana
+    state: present
+    update_cache: true
+
+- name: Deploy Grafana datasource provisioning (Prometheus)
+  ansible.builtin.template:
+    src: grafana_datasource.yml.j2
+    dest: /etc/grafana/provisioning/datasources/prometheus.yml

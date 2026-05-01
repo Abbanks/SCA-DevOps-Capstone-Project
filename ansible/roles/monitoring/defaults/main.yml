@@ -1,0 +1,13 @@
+---
+prometheus_version: "2.53.2"
+prometheus_port: 9090
+grafana_port: 3000
+
+# Scrape targets — override in group_vars/host_vars as needed
+prometheus_scrape_targets:
+  - job_name: web_node
+    target: "web_node:9100"
+  - job_name: app_node
+    target: "app_node:9100"
+  - job_name: db_node
+    target: "db_node:9100"
