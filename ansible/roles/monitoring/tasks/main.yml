@@ -89,7 +89,8 @@
     --storage.tsdb.retention.time=7d
     > /var/log/prometheus.log 2>&1 &
     echo $! > /tmp/prometheus.pid
-  executable: /bin/bash
+  args:
+    executable: /bin/bash
   changed_when: false
 
 - name: Verify prometheus is listening on port {{ monitoring_prometheus_port }}
